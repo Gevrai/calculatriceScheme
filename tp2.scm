@@ -39,7 +39,7 @@
         ((equal? errType 'ERROR_VAR_NAME)
           (string-append "Erreur de variable: Nom de variable '" (string errChar) "' invalide (doit etre un caractère de a à z en minuscule)"))
         ((equal? errType 'ERROR_VAR_NAME_TOO_LONG)
-          (string-append "Erreur de variable: Nom de variable doit contenir un seul et unique caractère entre a et z"))
+          (string-append "Erreur de variable: Nom de variable doit contenir un seul et unique caractère entre a et z et être suivi d'un espace"))
         ((equal? errType 'ERROR_CHAR)
           (string-append "Erreur de syntaxe: '" (string errChar) "' n'est pas un charactère valide"))
         ((equal? errType 'ERROR_NUMBER)
@@ -127,15 +127,17 @@
 
           ; Charactere est une variable?
           ((char<=? #\a (car expr) #\z)
-            (if (and (or (null? (cdr expr)) (char-whitespace? (cadr expr))) (getVar (car expr) dict))
-              (tokenizer
-                (cdr expr)
-                dict
-                (cons (getVar (car expr) dict) stack)
-                '()
-              )
-              (cons 'ERROR_VAR_ACCESS (car expr))
-            ))
+            (if (not (or (null? (cdr expr)) (char-whitespace? (cadr expr))))
+              (cons 'ERROR_VAR_NAME_TOO_LONG (car expr))
+              (if (not (getVar (car expr) dict))
+                (cons 'ERROR_VAR_ACCESS (car expr))
+                (tokenizer
+                  (cdr expr)
+                  dict
+                  (cons (getVar (car expr) dict) stack)
+                  '()
+                  )
+            )))
 
           ; Charactere est un operateur?
       	  ((assoc (car expr) permittedOperations)
