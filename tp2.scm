@@ -37,11 +37,15 @@
         ((equal? errType 'ERROR_VAR_ACCESS)
           (string-append "Erreur de variable: '" (string errChar) "' n'est pas une variable préalablement définie"))
         ((equal? errType 'ERROR_VAR_NAME)
-          (string-append "Erreur de variable: Nom de variable '" (string errChar) "' invalide (doit etre un charactere de a à z en minuscule)"))
+          (string-append "Erreur de variable: Nom de variable '" (string errChar) "' invalide (doit etre un caractère de a à z en minuscule)"))
+        ((equal? errType 'ERROR_VAR_NAME_TOO_LONG)
+          (string-append "Erreur de variable: Nom de variable doit contenir un seul et unique caractère entre a et z"))
         ((equal? errType 'ERROR_CHAR)
           (string-append "Erreur de syntaxe: '" (string errChar) "' n'est pas un charactère valide"))
         ((equal? errType 'ERROR_NUMBER)
           (string-append "Erreur de syntaxe: Un nombre ne peut contenir que des chiffres et doit être suivi d'un espace"))
+        ((equal? errType 'ERROR_NULL_ASSIGNATION)
+          (string-append "Erreur d'assignation: Une assignation (symbole '=') doit être suivi d'une lettre entre a et z"))
         (else
           "Erreur inconnue")))))
 
@@ -140,32 +144,33 @@
               (tokenizer
                 (cdr expr)
                 dict
-                (cons ((getFunction (car expr)) (cadr stack) (car stack)); resultat de l'addition
+                (cons ((getFunction (car expr)) (cadr stack) (car stack)); resultat de l'operation
                   (cddr stack)); consomme les deux nombres du stack
                 '()
               )))
 
           ; Charactere d'affectation
           ((char=? (car expr) #\=)
-            (if (and (not (null? (cdr expr))) (char<=? #\a (cadr expr) #\z)) ; Nom de variable valide?
-              (if (or (null? (cddr expr)) (char-whitespace? (caddr expr)))
-                (if (not (null? stack)) ; Element sur le stack?
-                  (tokenizer
-                    (cddr expr)
-                    (assign (cadr expr) (car stack) dict)
-                    stack
-                    '()
-                  )
-                  (cons 'ERROR_NOT_ENOUGH_ARGS (car expr)))
-                (cons 'ERROR_VAR_NAME (cadr expr)))
-              (cons 'ERROR_VAR_NAME (cadr expr)))
-            )
+            (if (or (null? (cdr expr)) (char-whitespace? (car expr))) ; assignation a quelque chose?
+              (cons 'ERROR_NULL_ASSIGNATION #\e)
+              (if (not (char<=? #\a (cadr expr) #\z)) ; Nom de variable valide? 
+                (cons 'ERROR_VAR_NAME (cadr expr))
+                (if (not (or (null? (cddr expr)) (char-whitespace? (caddr expr)))); Seulement un charactere?
+                  (cons 'ERROR_VAR_NAME_TOO_LONG (cadr expr))
+                  (if (null? stack) ; Element sur le stack?
+                    (cons 'ERROR_NOT_ENOUGH_ARGS (car expr))
+                    (tokenizer
+                      (cddr expr)
+                      (assign (cadr expr) (car stack) dict)
+                      stack
+                      '()
+                    ))))))
 
           ; Charactere inconnu
           (else
             (cons 'ERROR_CHAR (car expr)))
-          ))
-        )))
+
+          )))))
 
 (define traiter
   (lambda (expr dict)
