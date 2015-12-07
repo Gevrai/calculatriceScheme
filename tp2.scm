@@ -151,7 +151,7 @@
 
           ; Charactere d'affectation
           ((char=? (car expr) #\=)
-            (if (or (null? (cdr expr)) (char-whitespace? (car expr))) ; assignation a quelque chose?
+            (if (or (null? (cdr expr)) (char-whitespace? (cadr expr))) ; assignation a quelque chose?
               (cons 'ERROR_NULL_ASSIGNATION #\e)
               (if (not (char<=? #\a (cadr expr) #\z)) ; Nom de variable valide? 
                 (cons 'ERROR_VAR_NAME (cadr expr))
